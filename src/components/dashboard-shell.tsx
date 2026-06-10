@@ -21,10 +21,12 @@ const navItems = [
 export function DashboardShell({
   role,
   organisationName,
+  showDemoAccounts,
   children
 }: {
   role: MemberRole;
   organisationName: string;
+  showDemoAccounts: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -66,15 +68,20 @@ export function DashboardShell({
             })}
           </nav>
 
-          <div className="mt-6 space-y-3 rounded-3xl border border-border bg-surface-muted p-4">
-            <p className="text-sm font-medium text-foreground">Demo accounts</p>
-            <div className="space-y-1 text-sm text-muted">
-              <p>`ava@stackbeacon.test` admin</p>
-              <p>`sam@stackbeacon.test` agent</p>
-              <p>`vera@stackbeacon.test` viewer</p>
+          {showDemoAccounts ? (
+            <div className="mt-6 space-y-3 rounded-3xl border border-border bg-surface-muted p-4">
+              <p className="text-sm font-medium text-foreground">Demo accounts</p>
+              <div className="space-y-1 text-sm text-muted">
+                <p>`ava@stackbeacon.test` admin</p>
+                <p>`noah@stackbeacon.test` admin</p>
+                <p>`sam@stackbeacon.test` agent</p>
+                <p>`mia@stackbeacon.test` agent</p>
+                <p>`leo@stackbeacon.test` agent</p>
+                <p>`vera@stackbeacon.test` viewer</p>
+              </div>
+              <p className="text-xs text-muted">Password: `demo1234`</p>
             </div>
-            <p className="text-xs text-muted">Password: `demo1234`</p>
-          </div>
+          ) : null}
 
           <div className="mt-6 flex items-center justify-between gap-2">
             <ThemeToggle />

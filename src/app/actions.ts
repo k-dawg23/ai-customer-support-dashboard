@@ -10,6 +10,7 @@ import {
   addNote,
   createArticle,
   createCannedResponse,
+  createWorkspaceUser,
   deleteArticle,
   deleteCannedResponse,
   getCannedResponse,
@@ -17,10 +18,12 @@ import {
   getWorkspaceSettings,
   insertCannedResponseInDraft,
   registerWorkspaceAdmin,
+  removeWorkspaceUser,
   updateAiGenerationOutcome,
   updateArticle,
   updateCannedResponse,
   updateConversation,
+  updateWorkspaceUserRole,
   updateWorkspaceSettings
 } from "@/lib/store";
 import { clearSession, createSession, getSession } from "@/lib/session";
@@ -207,6 +210,42 @@ export async function updateSettingsAction(formData: FormData) {
     escalationMessage: getField(formData, "escalationMessage")
   });
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/settings");
+}
+
+export async function createWorkspaceUserAction(formData: FormData) {
+  const session = await requireWorkspaceSession();
+  await authorizeRole(session, ["ADMIN"]);
+  await createWorkspaceUser(session.organisationId, {
+    name: getField(formData, "name"),
+    email: getField(formData, "email"),
+    password: getField(formData, "password") || "demo1234",
+    role: getField(formData, "role") as "ADMIN" | "SUPPORT_AGENT" | "VIEWER"
+  });
+  revalidatePath("/dashboard/settings");
+}
+
+export async function updateWorkspaceUserRoleAction(formData: FormData) {
+  const session = await requireWorkspaceSession();
+  await authorizeRole(session, ["ADMIN"]);
+  if (getField(formData, "userId") === session.userId) {
+    throw new Error("You cannot change your own role from this screen.");
+  }
+  await updateWorkspaceUserRole(
+    session.organisationId,
+    getField(formData, "membershipId"),
+    getField(formData, "role") as "ADMIN" | "SUPPORT_AGENT" | "VIEWER"
+  );
+  revalidatePath("/dashboard/settings");
+}
+
+export async function removeWorkspaceUserAction(formData: FormData) {
+  const session = await requireWorkspaceSession();
+  await authorizeRole(session, ["ADMIN"]);
+  if (getField(formData, "userId") === session.userId) {
+    throw new Error("You cannot remove your own access from this screen.");
+  }
+  await removeWorkspaceUser(session.organisationId, getField(formData, "membershipId"));
   revalidatePath("/dashboard/settings");
 }
 

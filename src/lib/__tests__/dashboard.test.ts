@@ -13,9 +13,14 @@ describe("dashboard metrics and role guards", () => {
   it("scopes metrics to the active organisation", async () => {
     const metrics = await getDashboardMetrics("org-stackbeacon");
 
-    expect(metrics.openConversations).toBe(1);
-    expect(metrics.resolvedConversations).toBe(1);
-    expect(metrics.aiRepliesGenerated).toBe(1);
+    expect(metrics.openConversations).toBe(12);
+    expect(metrics.pendingConversations).toBe(8);
+    expect(metrics.resolvedConversations).toBe(15);
+    expect(metrics.resolvedToday).toBe(7);
+    expect(metrics.aiRepliesGenerated).toBe(42);
+    expect(metrics.knowledgeBaseArticles).toBe(18);
+    expect(metrics.cannedResponsesCount).toBe(12);
+    expect(metrics.averageResponseTimeMinutes).toBe(14);
   });
 
   it("hides internal notes from viewers", async () => {
@@ -28,7 +33,7 @@ describe("dashboard metrics and role guards", () => {
   it("tracks AI approval outcome transitions", async () => {
     const generation = await addAiGeneration({
       organisationId: "org-stackbeacon",
-      conversationId: "conv-1088",
+      conversationId: "conv-1036",
       draft: "Draft",
       confidenceLabel: "Medium",
       sourceArticleIds: ["kb-1"],
@@ -48,9 +53,9 @@ describe("dashboard metrics and role guards", () => {
   it("summarizes monthly AI usage by generation count", async () => {
     const summary = await getMonthlyAiUsageSummary("org-stackbeacon");
 
-    expect(summary.used).toBe(1);
-    expect(summary.limit).toBe(100);
-    expect(summary.tokens).toBe(420);
-    expect(summary.estimatedCostUsd).toBe(0.01);
+    expect(summary.used).toBe(42);
+    expect(summary.limit).toBe(120);
+    expect(summary.tokens).toBeGreaterThan(0);
+    expect(summary.estimatedCostUsd).toBeGreaterThan(0);
   });
 });

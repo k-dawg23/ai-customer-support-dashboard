@@ -154,6 +154,11 @@ Password for all demo accounts:
 
 - `demo1234`
 
+This is demo-only behavior:
+
+- the dashboard sidebar shows demo account credentials only when `DATABASE_URL` is not configured
+- when `DATABASE_URL` is configured and the app is using Prisma-backed persistence, those demo credentials are not shown in the UI
+
 ## Available Scripts
 
 ```bash

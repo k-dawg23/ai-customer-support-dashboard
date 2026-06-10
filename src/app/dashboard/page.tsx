@@ -7,14 +7,29 @@ import { getDashboardMetrics } from "@/lib/metrics";
 import { getWorkspaceConversations } from "@/lib/store";
 import { requireSession } from "@/lib/session";
 
+const sparklineBlocks = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
+
+function formatLabel(value: string) {
+  return value
+    .split("_")
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1).toLowerCase()}`)
+    .join(" ");
+}
+
+function renderSparkline(values: number[]) {
+  const maxValue = Math.max(...values, 1);
+  return values
+    .map((value) => sparklineBlocks[Math.min(Math.round((value / maxValue) * (sparklineBlocks.length - 1)), sparklineBlocks.length - 1)])
+    .join("");
+}
+
 export default async function DashboardPage() {
   const { organisation } = await requireSession();
   const [metrics, conversations] = await Promise.all([
     getDashboardMetrics(organisation.id),
     getWorkspaceConversations(organisation.id)
   ]);
-  const recentConversations = conversations
-    .slice(0, 3);
+  const recentConversations = conversations.slice(0, 3);
 
   return (
     <div className="space-y-8">
@@ -45,9 +60,9 @@ export default async function DashboardPage() {
           accent={<MessageSquareMore className="size-10 rounded-2xl bg-info/10 p-2 text-info" />}
         />
         <StatCard
-          label="Resolved conversations"
-          value={String(metrics.resolvedConversations)}
-          hint="Issues closed in the current seed history."
+          label="Resolved today"
+          value={String(metrics.resolvedToday)}
+          hint="Closed on the latest active support day."
           accent={<Activity className="size-10 rounded-2xl bg-success/10 p-2 text-success" />}
         />
         <StatCard
@@ -57,21 +72,21 @@ export default async function DashboardPage() {
           accent={<Clock3 className="size-10 rounded-2xl bg-warning/10 p-2 text-warning" />}
         />
         <StatCard
-          label="AI replies generated"
+          label="AI drafts generated"
           value={String(metrics.aiRepliesGenerated)}
-          hint="Human-reviewed drafts produced this month."
+          hint="Produced in the latest 30-day activity window."
           accent={<Sparkles className="size-10 rounded-2xl bg-ai/10 p-2 text-ai" />}
         />
         <StatCard
-          label="Knowledge base articles"
+          label="Knowledge base"
           value={String(metrics.knowledgeBaseArticles)}
           hint="Active and inactive business guidance."
           accent={<BookOpenText className="size-10 rounded-2xl bg-primary/10 p-2 text-primary" />}
         />
         <StatCard
-          label="Canned response uses"
-          value={String(metrics.cannedResponsesUsed)}
-          hint="Reusable replies inserted into drafts."
+          label="Canned responses"
+          value={String(metrics.cannedResponsesCount)}
+          hint="Saved replies available to the team."
           accent={<Bot className="size-10 rounded-2xl bg-primary/10 p-2 text-primary" />}
         />
       </section>
@@ -120,20 +135,34 @@ export default async function DashboardPage() {
             <h2 className="text-xl font-semibold text-foreground">AI outcome mix</h2>
             <p className="mt-1 text-sm text-muted">Basic quality analytics for human-reviewed drafts.</p>
           </div>
-          {Object.entries(metrics.aiOutcomeBreakdown).map(([key, value]) => (
+          {(
+            [
+              ["accepted_unchanged", metrics.aiOutcomePercentages.accepted_unchanged],
+              ["edited_and_used", metrics.aiOutcomePercentages.edited_and_used],
+              ["rejected", metrics.aiOutcomePercentages.rejected]
+            ] as const
+          ).map(([key, value]) => (
             <div key={key} className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="capitalize text-foreground">{key.replaceAll("_", " ")}</span>
-                <span className="text-muted">{value}</span>
+                <span className="text-foreground">{formatLabel(key)}</span>
+                <span className="text-muted">{value}%</span>
               </div>
               <div className="h-2 rounded-full bg-surface-muted">
-                <div
-                  className="h-2 rounded-full bg-primary"
-                  style={{ width: `${Math.max((value / Math.max(metrics.aiRepliesGenerated, 1)) * 100, 6)}%` }}
-                />
+                <div className="h-2 rounded-full bg-primary" style={{ width: `${Math.max(value, 4)}%` }} />
               </div>
             </div>
           ))}
+          <div className="rounded-3xl border border-border bg-surface-muted p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-foreground">Last 30 Days</p>
+              <p className="font-mono text-lg tracking-[0.2em] text-primary">
+                {renderSparkline(metrics.aiTrendLast30Days)}
+              </p>
+            </div>
+            <p className="mt-2 text-sm text-muted">
+              Trend based on seeded AI generation activity when live analytics are unavailable.
+            </p>
+          </div>
         </div>
       </section>
     </div>

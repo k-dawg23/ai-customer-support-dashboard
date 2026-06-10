@@ -23,7 +23,8 @@ import type {
   OrganisationMember,
   OrganisationSettings,
   UsageEvent,
-  User
+  User,
+  WorkspaceUser
 } from "@/lib/types";
 
 function cloneState<T>(value: T): T {
@@ -463,13 +464,15 @@ export async function registerWorkspaceAdmin(input: {
   };
 }
 
-export async function getWorkspaceUsers(organisationId: string) {
+export async function getWorkspaceUsers(organisationId: string): Promise<WorkspaceUser[]> {
   if (useDemoStore()) {
     return state.memberships
       .filter((membership) => membership.organisationId === organisationId && membership.active)
       .map((membership) => ({
+        membershipId: membership.id,
         ...state.users.find((user) => user.id === membership.userId)!,
-        role: membership.role
+        role: membership.role,
+        active: membership.active
       }));
   }
 
@@ -487,9 +490,182 @@ export async function getWorkspaceUsers(organisationId: string) {
   });
 
   return memberships.map((membership) => ({
+    membershipId: membership.id,
     ...mapUser(membership.user),
-    role: membership.role as MemberRole
+    role: membership.role as MemberRole,
+    active: membership.active
   }));
+}
+
+async function getWorkspaceAdminCount(organisationId: string) {
+  const members = await getWorkspaceUsers(organisationId);
+  return members.filter((member) => member.role === "ADMIN" && member.active).length;
+}
+
+export async function createWorkspaceUser(
+  organisationId: string,
+  input: { name: string; email: string; password: string; role: MemberRole }
+) {
+  const normalizedEmail = input.email.toLowerCase();
+  const existingUser = await getUserByEmail(normalizedEmail);
+
+  if (useDemoStore()) {
+    if (existingUser) {
+      const existingMembership = state.memberships.find(
+        (membership) =>
+          membership.organisationId === organisationId && membership.userId === existingUser.id
+      );
+      if (existingMembership?.active) {
+        throw new Error("That user already has access to this workspace.");
+      }
+      if (existingMembership) {
+        existingMembership.role = input.role;
+        existingMembership.active = true;
+        return {
+          membershipId: existingMembership.id,
+          ...existingUser,
+          role: existingMembership.role,
+          active: existingMembership.active
+        };
+      }
+    }
+
+    const user = existingUser ?? {
+      id: createId("user"),
+      name: input.name,
+      email: normalizedEmail,
+      password: input.password
+    };
+
+    if (!existingUser) {
+      state.users.push(user);
+    }
+
+    const membership: OrganisationMember = {
+      id: createId("member"),
+      organisationId,
+      userId: user.id,
+      role: input.role,
+      active: true
+    };
+    state.memberships.push(membership);
+    return { membershipId: membership.id, ...user, role: membership.role, active: membership.active };
+  }
+
+  const passwordHash = await bcrypt.hash(input.password, 10);
+
+  const member = await prisma.$transaction(async (tx) => {
+    const user =
+      existingUser
+        ? await tx.user.update({
+            where: { id: existingUser.id },
+            data: { name: input.name }
+          })
+        : await tx.user.create({
+            data: {
+              name: input.name,
+              email: normalizedEmail,
+              passwordHash
+            }
+          });
+
+    const existingMembership = await tx.organisationMember.findFirst({
+      where: {
+        organisationId,
+        userId: user.id
+      }
+    });
+
+    if (existingMembership?.active) {
+      throw new Error("That user already has access to this workspace.");
+    }
+
+    const membership = existingMembership
+      ? await tx.organisationMember.update({
+          where: { id: existingMembership.id },
+          data: {
+            role: input.role,
+            active: true
+          }
+        })
+      : await tx.organisationMember.create({
+          data: {
+            organisationId,
+            userId: user.id,
+            role: input.role,
+            active: true
+          }
+        });
+
+    return { user, membership };
+  });
+
+  return {
+    membershipId: member.membership.id,
+    ...mapUser(member.user),
+    role: member.membership.role as MemberRole,
+    active: member.membership.active
+  };
+}
+
+export async function updateWorkspaceUserRole(
+  organisationId: string,
+  membershipId: string,
+  role: MemberRole
+) {
+  const members = await getWorkspaceUsers(organisationId);
+  const existingMember = members.find((member) => member.membershipId === membershipId);
+  if (!existingMember) {
+    throw new Error("User access record not found.");
+  }
+  if (existingMember.role === "ADMIN" && role !== "ADMIN") {
+    const adminCount = await getWorkspaceAdminCount(organisationId);
+    if (adminCount <= 1) {
+      throw new Error("At least one admin must remain in the workspace.");
+    }
+  }
+
+  if (useDemoStore()) {
+    const membership = state.memberships.find((item) => item.id === membershipId);
+    if (!membership) {
+      throw new Error("User access record not found.");
+    }
+    membership.role = role;
+    return membership;
+  }
+
+  return prisma.organisationMember.update({
+    where: { id: membershipId },
+    data: { role }
+  });
+}
+
+export async function removeWorkspaceUser(organisationId: string, membershipId: string) {
+  const members = await getWorkspaceUsers(organisationId);
+  const existingMember = members.find((member) => member.membershipId === membershipId);
+  if (!existingMember) {
+    throw new Error("User access record not found.");
+  }
+  if (existingMember.role === "ADMIN") {
+    const adminCount = await getWorkspaceAdminCount(organisationId);
+    if (adminCount <= 1) {
+      throw new Error("At least one admin must remain in the workspace.");
+    }
+  }
+
+  if (useDemoStore()) {
+    const membership = state.memberships.find((item) => item.id === membershipId);
+    if (!membership) {
+      throw new Error("User access record not found.");
+    }
+    membership.active = false;
+    return membership;
+  }
+
+  return prisma.organisationMember.update({
+    where: { id: membershipId },
+    data: { active: false }
+  });
 }
 
 export async function getWorkspaceSettings(organisationId: string): Promise<OrganisationSettings> {

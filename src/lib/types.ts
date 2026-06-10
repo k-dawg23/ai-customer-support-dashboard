@@ -16,6 +16,12 @@ export interface User {
   password: string;
 }
 
+export interface WorkspaceUser extends User {
+  membershipId: string;
+  role: MemberRole;
+  active: boolean;
+}
+
 export interface Organisation {
   id: string;
   name: string;
