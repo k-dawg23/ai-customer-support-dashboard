@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -20,7 +21,7 @@ export async function clearSession() {
   store.delete(sessionCookieName);
 }
 
-export async function getSession(): Promise<AuthSession | null> {
+export const getSession = cache(async (): Promise<AuthSession | null> => {
   const store = await cookies();
   const raw = store.get(sessionCookieName)?.value;
   if (!raw) {
@@ -32,29 +33,31 @@ export async function getSession(): Promise<AuthSession | null> {
   } catch {
     return null;
   }
-}
+});
 
-export async function requireSession() {
+export const requireSession = cache(async () => {
   const session = await getSession();
   if (!session) {
     redirect("/login");
   }
-  const membership = await getMembership(session.userId, session.organisationId);
+  const [membership, user, organisation] = await Promise.all([
+    getMembership(session.userId, session.organisationId),
+    getUser(session.userId),
+    getOrganisation(session.organisationId)
+  ]);
   if (!membership) {
     redirect("/access-denied");
   }
-  const user = await getUser(session.userId);
-  const organisation = await getOrganisation(session.organisationId);
   if (!user) {
     redirect("/login");
   }
   return { session, membership, user, organisation };
-}
+});
 
-export async function requireRole(allowedRoles: MemberRole[]) {
+export const requireRole = cache(async (allowedRoles: MemberRole[]) => {
   const { session, membership, user, organisation } = await requireSession();
   if (!allowedRoles.includes(membership.role)) {
     redirect("/access-denied");
   }
   return { session, membership, user, organisation };
-}
+});

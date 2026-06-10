@@ -31,7 +31,7 @@ export function DashboardShell({
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-foreground">
-      <div className="mx-auto grid min-h-screen w-full max-w-[1500px] gap-6 px-4 py-4 md:grid-cols-[260px_1fr] md:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-screen w-full max-w-[1500px] gap-6 px-4 py-4 md:px-6 lg:px-8 xl:grid-cols-[260px_1fr]">
         <aside className="rounded-[28px] border border-border bg-surface p-4 shadow-card">
           <div className="flex items-center justify-between gap-3 border-b border-border pb-5">
             <div>

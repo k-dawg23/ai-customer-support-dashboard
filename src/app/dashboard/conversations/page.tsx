@@ -19,6 +19,9 @@ export default async function ConversationsPage({
     status ? conversation.status === status : true
   );
 
+  const formatStatus = (value: string) => value.replaceAll("_", " ");
+  const formatChannel = (value: string) => value.replaceAll("_", " ");
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -41,53 +44,55 @@ export default async function ConversationsPage({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[28px] border border-border">
-        <table className="min-w-full divide-y divide-border">
-          <thead className="bg-surface-muted text-left text-xs uppercase tracking-[0.2em] text-muted">
-            <tr>
-              <th className="px-5 py-4">Conversation</th>
-              <th className="px-5 py-4">Status</th>
-              <th className="px-5 py-4">Assigned</th>
-              <th className="px-5 py-4">Channel</th>
-              <th className="px-5 py-4">Open</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border bg-surface">
-            {conversations.map((conversation) => {
-              const assignedUser = users.find((user) => user.id === conversation.assignedToId);
-              return (
-                <tr key={conversation.id} className="hover:bg-surface-muted/80">
-                  <td className="px-5 py-4">
-                    <Link href={`/dashboard/conversations/${conversation.id}`} className="block">
-                      <p className="text-sm text-muted">
-                        #{conversation.id.replace("conv-", "")} · {conversation.customerName}
-                      </p>
-                      <p className="mt-1 font-medium text-foreground">{conversation.subject}</p>
-                      <p className="mt-2 text-sm text-primary">Open conversation</p>
-                    </Link>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className="rounded-full border border-border bg-surface-muted px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted">
-                      Status: {conversation.status.replace("_", " ")}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 text-sm text-muted">{assignedUser?.name ?? "Unassigned"}</td>
-                  <td className="px-5 py-4 text-sm text-muted">
-                    Source: {conversation.channel.replace("_", " ")}
-                  </td>
-                  <td className="px-5 py-4">
-                    <Link
-                      href={`/dashboard/conversations/${conversation.id}`}
-                      className="inline-flex rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary hover:text-white"
-                    >
-                      Open
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+        {conversations.map((conversation) => {
+          const assignedUser = users.find((user) => user.id === conversation.assignedToId);
+          return (
+            <article
+              key={conversation.id}
+              className="rounded-[28px] border border-border bg-surface p-5"
+            >
+              <div className="flex flex-col gap-4">
+                <div>
+                  <p className="text-sm text-muted">
+                    #{conversation.id.replace("conv-", "")} · {conversation.customerName}
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold text-foreground">{conversation.subject}</h2>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-border bg-surface-muted px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted">Status</p>
+                    <p className="mt-2 text-sm font-medium text-foreground">
+                      {formatStatus(conversation.status)}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-surface-muted px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted">Assigned</p>
+                    <p className="mt-2 text-sm font-medium text-foreground">
+                      {assignedUser?.name ?? "Unassigned"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-surface-muted px-4 py-3 sm:col-span-2">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted">Channel</p>
+                    <p className="mt-2 text-sm font-medium text-foreground">
+                      {formatChannel(conversation.channel)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href={`/dashboard/conversations/${conversation.id}`}
+                    className="inline-flex rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+                  >
+                    Open conversation
+                  </Link>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </div>
   );
