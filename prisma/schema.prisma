@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MemberRole {
+  ADMIN
+  SUPPORT_AGENT
+  VIEWER
+}
+
+enum ConversationStatus {
+  OPEN
+  PENDING
+  RESOLVED
+  ESCALATED
+}
+
+enum SupportChannel {
+  EMAIL
+  WEBSITE
+  LIVE_CHAT
+  FACEBOOK
+  X
+}
+
+enum ArticleState {
+  ACTIVE
+  INACTIVE
+}
+
+enum UsageEventType {
+  AI_GENERATION
+  CANNED_RESPONSE_INSERTED
+  CONVERSATION_RESOLVED
+}
+
+enum AiApprovalOutcome {
+  GENERATED
+  ACCEPTED_UNCHANGED
+  EDITED_AND_USED
+  REJECTED
+}
+
+enum SupportTone {
+  FRIENDLY
+  PROFESSIONAL
+  CONCISE
+}
+
+model User {
+  id           String                @id @default(cuid())
+  name         String
+  email        String                @unique
+  passwordHash String
+  memberships  OrganisationMember[]
+  messages     Message[]
+  notes        InternalNote[]
+  assigned     Conversation[]        @relation("ConversationAssignee")
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+}
+
+model Organisation {
+  id                String                @id @default(cuid())
+  name              String
+  memberships       OrganisationMember[]
+  conversations     Conversation[]
+  knowledgeArticles KnowledgeBaseArticle[]
+  cannedResponses   CannedResponse[]
+  aiGenerations     AiReplyGeneration[]
+  usageEvents       UsageEvent[]
+  settings          OrganisationSettings?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+}
+
+model OrganisationMember {
+  id             String       @id @default(cuid())
+  organisationId String
+  userId         String
+  role           MemberRole
+  active         Boolean      @default(true)
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organisationId, userId])
+}
+
+model Conversation {
+  id             String              @id @default(cuid())
+  organisationId String
+  customerName   String
+  customerEmail  String
+  subject        String
+  channel        SupportChannel
+  status         ConversationStatus  @default(OPEN)
+  priority       String
+  latestDraft    String?
+  assignedToId   String?
+  organisation   Organisation        @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  assignedTo     User?               @relation("ConversationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  messages       Message[]
+  notes          InternalNote[]
+  aiGenerations  AiReplyGeneration[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  resolvedAt     DateTime?
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  authorId       String?
+  authorType     String
+  body           String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author         User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+}
+
+model InternalNote {
+  id             String       @id @default(cuid())
+  conversationId String
+  authorId       String
+  body           String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author         User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+model KnowledgeBaseArticle {
+  id             String       @id @default(cuid())
+  organisationId String
+  title          String
+  category       String
+  summary        String
+  body           String
+  state          ArticleState @default(ACTIVE)
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model CannedResponse {
+  id             String       @id @default(cuid())
+  organisationId String
+  title          String
+  category       String
+  body           String
+  usageCount     Int          @default(0)
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model AiReplyGeneration {
+  id                 String            @id @default(cuid())
+  organisationId     String
+  conversationId     String
+  draft              String
+  confidenceLabel    String
+  sourceArticleIds   String[]
+  sourceSnippetTitles String[]
+  outcome            AiApprovalOutcome @default(GENERATED)
+  tokenEstimate      Int?
+  estimatedCostUsd   Float?
+  warning            String?
+  organisation       Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  conversation       Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model OrganisationSettings {
+  id                    String       @id @default(cuid())
+  organisationId        String       @unique
+  companyName           String
+  supportTone           SupportTone
+  defaultAiModel        String
+  monthlyAiUsageLimit   Int
+  businessHours         String
+  escalationMessage     String
+  organisation          Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+}
+
+model UsageEvent {
+  id             String         @id @default(cuid())
+  organisationId String
+  type           UsageEventType
+  referenceId    String?
+  tokenEstimate  Int?
+  estimatedCostUsd Float?
+  metadata       Json?
+  organisation   Organisation   @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+}
