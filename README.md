@@ -226,12 +226,8 @@ openspec                Proposal, design, specs, and tasks
 
 ## Known Limitations
 
-- The UI uses an in-memory demo store, so changes are not persisted across server restarts.
+- Persistence depends on `DATABASE_URL`. Without it, the app falls back to the seeded in-memory demo store.
 - Authentication is suitable for MVP/demo use and is not production hardened.
 - Live outbound customer messaging is not implemented.
 - External inbox integrations are not included in V1.
 - The OpenAI integration supports a fallback mode when no API key is configured.
-
-## Next Recommended Step
-
-The next practical engineering step is wiring the UI from the in-memory store to live Prisma-backed persistence while preserving the current seeded demo experience.

@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { StatusBadge } from "@/components/status-badge";
 import { getWorkspaceUsers, getWorkspaceConversations } from "@/lib/store";
 import { requireSession } from "@/lib/session";
 import type { ConversationStatus } from "@/lib/types";
@@ -50,6 +49,7 @@ export default async function ConversationsPage({
               <th className="px-5 py-4">Status</th>
               <th className="px-5 py-4">Assigned</th>
               <th className="px-5 py-4">Channel</th>
+              <th className="px-5 py-4">Open</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-surface">
@@ -63,13 +63,26 @@ export default async function ConversationsPage({
                         #{conversation.id.replace("conv-", "")} · {conversation.customerName}
                       </p>
                       <p className="mt-1 font-medium text-foreground">{conversation.subject}</p>
+                      <p className="mt-2 text-sm text-primary">Open conversation</p>
                     </Link>
                   </td>
                   <td className="px-5 py-4">
-                    <StatusBadge status={conversation.status} />
+                    <span className="rounded-full border border-border bg-surface-muted px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted">
+                      Status: {conversation.status.replace("_", " ")}
+                    </span>
                   </td>
                   <td className="px-5 py-4 text-sm text-muted">{assignedUser?.name ?? "Unassigned"}</td>
-                  <td className="px-5 py-4 text-sm text-muted">{conversation.channel.replace("_", " ")}</td>
+                  <td className="px-5 py-4 text-sm text-muted">
+                    Source: {conversation.channel.replace("_", " ")}
+                  </td>
+                  <td className="px-5 py-4">
+                    <Link
+                      href={`/dashboard/conversations/${conversation.id}`}
+                      className="inline-flex rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary hover:text-white"
+                    >
+                      Open
+                    </Link>
+                  </td>
                 </tr>
               );
             })}

@@ -59,15 +59,29 @@ export default async function CannedResponsesPage() {
             <p className="mt-4 text-sm leading-6 text-foreground">{response.body}</p>
             {canManage ? (
               <div className="mt-5 flex flex-wrap gap-3">
-                <form action={updateCannedResponseAction} className="flex items-center gap-2">
+                <form
+                  action={updateCannedResponseAction}
+                  className="grid w-full gap-3 rounded-3xl border border-border bg-surface-muted p-4"
+                >
                   <input type="hidden" name="id" value={response.id} />
+                  <input
+                    name="title"
+                    defaultValue={response.title}
+                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground"
+                  />
                   <input
                     name="category"
                     defaultValue={response.category}
-                    className="rounded-full border border-border bg-surface-muted px-4 py-2 text-sm text-foreground"
+                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground"
+                  />
+                  <textarea
+                    name="body"
+                    rows={4}
+                    defaultValue={response.body}
+                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground"
                   />
                   <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm font-medium">
-                    Update category
+                    Update response
                   </button>
                 </form>
                 <form action={deleteCannedResponseAction}>

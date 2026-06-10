@@ -139,6 +139,10 @@ export async function updateArticleAction(formData: FormData) {
   const session = await requireWorkspaceSession();
   await authorizeRole(session, ["ADMIN"]);
   await updateArticle(getField(formData, "id"), {
+    title: getField(formData, "title") || undefined,
+    category: getField(formData, "category") || undefined,
+    summary: getField(formData, "summary") || undefined,
+    body: getField(formData, "body") || undefined,
     state: getField(formData, "state") as ArticleState
   });
   revalidatePath("/dashboard/knowledge-base");
@@ -166,7 +170,9 @@ export async function updateCannedResponseAction(formData: FormData) {
   const session = await requireWorkspaceSession();
   await authorizeRole(session, ["ADMIN"]);
   await updateCannedResponse(getField(formData, "id"), {
-    category: getField(formData, "category")
+    title: getField(formData, "title") || undefined,
+    category: getField(formData, "category") || undefined,
+    body: getField(formData, "body") || undefined
   });
   revalidatePath("/dashboard/canned-responses");
 }
@@ -200,6 +206,7 @@ export async function updateSettingsAction(formData: FormData) {
     businessHours: getField(formData, "businessHours"),
     escalationMessage: getField(formData, "escalationMessage")
   });
+  revalidatePath("/dashboard");
   revalidatePath("/dashboard/settings");
 }
 

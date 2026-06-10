@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Activity, Bot, BookOpenText, Clock3, MessageSquareMore, Sparkles } from "lucide-react";
 
 import { StatCard } from "@/components/stat-card";
@@ -89,17 +90,25 @@ export default async function DashboardPage() {
                 key={conversation.id}
                 className="flex flex-col gap-4 rounded-3xl border border-border bg-surface-muted p-4 lg:flex-row lg:items-center lg:justify-between"
               >
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm text-muted">
                     #{conversation.id.replace("conv-", "")} · {conversation.customerName}
                   </p>
                   <h3 className="mt-1 font-semibold text-foreground">{conversation.subject}</h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={conversation.status} />
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                    {conversation.channel.replace("_", " ")}
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <span className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted">
+                    Status: {conversation.status.replace("_", " ").toLowerCase()}
                   </span>
+                  <span className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted">
+                    Source: {conversation.channel.replace("_", " ").toLowerCase()}
+                  </span>
+                  <Link
+                    href={`/dashboard/conversations/${conversation.id}`}
+                    className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+                  >
+                    Open conversation
+                  </Link>
                 </div>
               </div>
             ))}

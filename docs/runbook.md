@@ -173,24 +173,12 @@ pnpm db:seed
 
 ## 5. Current Architecture Boundary
 
-The Prisma schema, migration, and seed path are production-oriented artifacts.
+The runtime store now supports both modes through [`src/lib/store.ts`](/home/kdawg/AI/AI_Customer_Support_Dashboard/src/lib/store.ts):
 
-The current UI still uses:
-
-- [`src/lib/demo-data.ts`](/home/kdawg/AI/AI_Customer_Support_Dashboard/src/lib/demo-data.ts)
-- [`src/lib/store.ts`](/home/kdawg/AI/AI_Customer_Support_Dashboard/src/lib/store.ts)
+- with `DATABASE_URL`, reads and writes are persisted through Prisma
+- without `DATABASE_URL`, the app falls back to [`src/lib/demo-data.ts`](/home/kdawg/AI/AI_Customer_Support_Dashboard/src/lib/demo-data.ts) for a seeded demo workspace
 
 That means:
 
-- app interactions are not yet persisted to PostgreSQL
-- database setup is validated separately from the UI runtime
-
-## 6. Recommended Next Engineering Step
-
-Replace the in-memory store layer with a repository/data-access layer backed by Prisma while keeping:
-
-- the current seeded demo scenarios
-- the role-based access rules
-- the existing UI routes and server actions
-
-This is the remaining step needed to make the dashboard state durable across restarts.
+- dashboard changes are durable across restarts when Postgres is configured
+- local UI-only demos still work without a database

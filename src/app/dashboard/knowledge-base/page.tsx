@@ -79,6 +79,44 @@ export default async function KnowledgeBasePage() {
             <p className="mt-4 text-sm leading-6 text-foreground">{article.body}</p>
             {canManage ? (
               <div className="mt-5 flex flex-wrap gap-3">
+                <form
+                  action={updateArticleAction}
+                  className="grid w-full gap-3 rounded-3xl border border-border bg-surface-muted p-4"
+                >
+                  <input type="hidden" name="id" value={article.id} />
+                  <input
+                    name="title"
+                    defaultValue={article.title}
+                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground"
+                  />
+                  <input
+                    name="category"
+                    defaultValue={article.category}
+                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground"
+                  />
+                  <input
+                    name="summary"
+                    defaultValue={article.summary}
+                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground"
+                  />
+                  <textarea
+                    name="body"
+                    rows={4}
+                    defaultValue={article.body}
+                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground"
+                  />
+                  <select
+                    name="state"
+                    defaultValue={article.state}
+                    className="rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground"
+                  >
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                  </select>
+                  <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm font-medium">
+                    Update article
+                  </button>
+                </form>
                 <form action={updateArticleAction}>
                   <input type="hidden" name="id" value={article.id} />
                   <input

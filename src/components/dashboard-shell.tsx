@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { BarChart3, BookOpen, Bot, Home, LogOut, MessageSquareMore, Settings2 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -8,7 +11,7 @@ import type { MemberRole } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", label: "Overview", icon: Home },
+  { href: "/dashboard", label: "Overview", icon: Home, exact: true },
   { href: "/dashboard/conversations", label: "Conversations", icon: MessageSquareMore },
   { href: "/dashboard/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { href: "/dashboard/canned-responses", label: "Canned Responses", icon: Bot },
@@ -17,15 +20,15 @@ const navItems = [
 
 export function DashboardShell({
   role,
-  pathname,
   organisationName,
   children
 }: {
   role: MemberRole;
-  pathname: string;
   organisationName: string;
   children: ReactNode;
 }) {
+  const pathname = usePathname();
+
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-foreground">
       <div className="mx-auto grid min-h-screen w-full max-w-[1500px] gap-6 px-4 py-4 md:grid-cols-[260px_1fr] md:px-6 lg:px-8">
@@ -41,7 +44,9 @@ export function DashboardShell({
 
           <nav className="mt-6 space-y-1">
             {navItems.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active = item.exact
+                ? pathname === item.href
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
               const Icon = item.icon;
               return (
                 <Link
